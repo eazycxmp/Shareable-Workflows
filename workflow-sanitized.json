@@ -1,0 +1,170 @@
+{
+  "name": "AI Call Summary (CSM Notes → Slack)",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Trigger: Manual Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "id": "2",
+      "name": "Input Transcript (Manual)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "manual",
+        "values": {
+          "string": [
+            {
+              "name": "transcript",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Check Transcript Source",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"transcript\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Get Transcript from Google Docs",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "credentials": {
+        "googleDriveOAuth2Api": "GOOGLE_DRIVE_PLACEHOLDER"
+      },
+      "parameters": {
+        "operation": "download",
+        "fileId": "YOUR_FILE_ID_HERE"
+      }
+    },
+    {
+      "id": "5",
+      "name": "Convert File to Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "manual",
+        "values": {
+          "string": [
+            {
+              "name": "transcript",
+              "value": "={{$binary.data.toString('utf8')}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6",
+      "name": "Combine Transcript Paths",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "7",
+      "name": "Generate Gainsight Summary",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "credentials": {
+        "openAIApi": "OPENAI_API_KEY_PLACEHOLDER"
+      },
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "prompt": "Summarize the following customer call transcript into clear, structured CSM notes for Gainsight.\n\nInclude:\n- Call Purpose\n- Customer Concerns\n- Next Steps / Tasks\n- Owner / Action Items\n\nKeep it concise and professional.\n\nTranscript:\n{{$json[\"transcript\"]}}"
+      }
+    },
+    {
+      "id": "8",
+      "name": "Send Summary to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "credentials": {
+        "slackApi": "SLACK_API_TOKEN_PLACEHOLDER"
+      },
+      "parameters": {
+        "operation": "post",
+        "text": "*Call Summary*\n\n{{$json[\"message\"][\"content\"] || $json[\"data\"][0][\"message\"][\"content\"] || $json[\"choices\"][0][\"message\"][\"content\"]}}",
+        "channel": "YOUR_SLACK_CHANNEL_ID"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger: Manual Run": {
+      "main": [
+        [
+          { "node": "Input Transcript (Manual)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Input Transcript (Manual)": {
+      "main": [
+        [
+          { "node": "Check Transcript Source", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Transcript Source": {
+      "main": [
+        [
+          { "node": "Combine Transcript Paths", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Get Transcript from Google Docs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Transcript from Google Docs": {
+      "main": [
+        [
+          { "node": "Convert File to Text", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Convert File to Text": {
+      "main": [
+        [
+          { "node": "Combine Transcript Paths", "type": "main", "index": 1 }
+        ]
+      ]
+    },
+    "Combine Transcript Paths": {
+      "main": [
+        [
+          { "node": "Generate Gainsight Summary", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Gainsight Summary": {
+      "main": [
+        [
+          { "node": "Send Summary to Slack", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "workflow-sanitized-v1"
+}
