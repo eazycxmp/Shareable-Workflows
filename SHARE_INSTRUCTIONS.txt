@@ -1,0 +1,29 @@
+HOW TO USE THIS WORKFLOW
+
+1. Import `workflow-sanitized.json` into your n8n instance.
+
+2. Add your own credentials inside n8n:
+   - OpenAI (API Key)
+   - Slack (Bot Token)
+   - Google Drive / Docs (OAuth)
+
+3. For OpenAI:
+   - Use gpt-4-turbo or gpt-4o-mini for faster responses.
+
+4. For Slack:
+   - Connect to your workspace.
+   - Pick a test channel for posting summaries.
+
+5. Optional:
+   - Create `.env` file from `.env.example` and add:
+     ```
+     OPENAI_API_KEY=your-key
+     SLACK_TOKEN=your-token
+     GOOGLE_API_KEY=your-key
+     ```
+
+6. Test by manually running the workflow:
+   - Option 1: Paste transcript text in the “Input Transcript (Manual)” node.
+   - Option 2: Provide a Google Doc file link.
+
+7. The output will appear in your Slack channel under the header:
